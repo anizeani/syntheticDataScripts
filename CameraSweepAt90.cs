@@ -7,30 +7,28 @@ using System.Linq;
 public class CameraSweepAt90 : MonoBehaviour
 {
     private int _height;
+    public int height { get => _height; set => _height = value; }
 
     const int TOTAL_IMAGES = 900;
     const float TEST_IMAGE_PERCENT = .2f;
-    List<GameObject> humans;
 
     int testNum;
     int imageNum = 1;
     int maxNormalImageNumber;
-    string parentPath;
 
+    string parentPath;
     string testLabelPath;
     string trainLabelPath;
-
-    string testImagePath;
+    string testPath;
     string testImageWithMaterialColor;
-    string testImagePathImages;
+    string testImagePath;
     string testPathAnnotations;
-
-    string trainImagePath;
+    string trainPath;
     string trainImageWithMaterialColor;
-    string trainImagePathImages;
+    string trainImagePath;
     string trainPathAnnotations;
-    GameObject[] men;
-    GameObject[] women;
+
+    GameObject[] humans;
     int incrementX = 30;
     public int incrementZ = 100;
 
@@ -42,14 +40,11 @@ public class CameraSweepAt90 : MonoBehaviour
     int xBound = 100;
     int zBound = 100;
     //probably should forloop over different height, starting at 3m going up to 100m
-    public int height { get => _height; set => _height = value; }
     bool secondApproachWithFancyMaterial = false;
 
     // Start is called before the first frame update
     void Start()
     {
-        humans = new List<GameObject>();
-
         //Folder Initialization
         CreateDirectories();
         CreateLabelFiles();
@@ -90,10 +85,9 @@ public class CameraSweepAt90 : MonoBehaviour
             transform.position = new Vector3(xBound, 200, zBound);
             transform.position = new Vector3(xBound + incrementX, terrain.SampleHeight(transform.position + Vector3.right * incrementX) + height, zBound);
             Material unlitColoredMaterial = (Material)Resources.Load("unlitForSecondSweep", typeof(Material));
-            men = GameObject.FindGameObjectsWithTag("man");
-            women = GameObject.FindGameObjectsWithTag("woman");
+            humans = GameObject.FindGameObjectsWithTag("human");
             unlitColoredMaterial.SetColor("_Color", Color.red);
-            men
+            humans
                 .SelectMany(go => go.GetComponentsInChildren<SkinnedMeshRenderer>())
                 .ToList()
                 .ForEach(r =>
@@ -102,20 +96,11 @@ public class CameraSweepAt90 : MonoBehaviour
                     //r.material.SetColor("_Color", Color.red);
                 }
                 );
-            women
-                .SelectMany(go => go.GetComponentsInChildren<SkinnedMeshRenderer>())
-                .ToList()
-                .ForEach(r =>
-                {
-                    r.material = unlitColoredMaterial;
-                }
-                );
         }
         else if (height < 100)
         {
             height += 5;
-            foreach (GameObject man in men) Destroy(man);
-            foreach (GameObject woman in women) Destroy(woman);
+            foreach (GameObject human in humans) Destroy(human);
             Destroy(GameObject.Find("HumanGenerator").GetComponent<GenerateHumansAtRandomPosition>());
             GameObject.Find("HumanGenerator").AddComponent<GenerateHumansAtRandomPosition>();
             Destroy(Camera.main.gameObject.GetComponent<DelayCameraSweep>());
@@ -136,9 +121,6 @@ public class CameraSweepAt90 : MonoBehaviour
     {
         yield return new WaitForEndOfFrame();
         TakeFullScreenPicture();
-        //var name = GetFilename();
-        //Debug.Log("Writing screenshot: " + name);
-        //ScreenCapture.CaptureScreenshot(name);
     }
 
     void TakeFullScreenPicture()
@@ -146,29 +128,22 @@ public class CameraSweepAt90 : MonoBehaviour
         if (imageNum == maxNormalImageNumber)
             return;
         takeImageCounter++;
-        //Texture2D photo = new Texture2D(Screen.width, Screen.height, TextureFormat.RGB24, false);
-        //photo.ReadPixels(new Rect(0, 0, Screen.width, Screen.height), 0, 0, false);
-        //photo.Apply();
-        //byte[] data = photo.EncodeToJPG(100);
-        //DestroyImmediate(photo);
+
         if (imageNum > testNum)
         {
             //bb = boundingBox
             if (secondApproachWithFancyMaterial == false)
             {
-                ScreenCapture.CaptureScreenshot(trainImagePath + "/images/" + imageNum + "_CaptureScreenshotFunction" + height + ".jpg", 4);
+                ScreenCapture.CaptureScreenshot(trainPath + "/images/" + imageNum + "_" + height + ".jpg", 4);
                 //File.WriteAllBytes(trainImagePath + "/images/" + imageNum + "_" + height + ".jpg", data);
-                var men = FindAllVisibleHumans("0");
-                var women = FindAllVisibleHumans("1");
-                var allBbs = men.Concat(women);
+                var human = FindAllVisibleHumans("human");
                 File.WriteAllText(
-                    trainImagePath + "/annotations/" + imageNum + "_" + height + ".txt",
+                    trainPath + "/annotations/" + imageNum + "_" + height + ".txt",
                     string.Join(
                         System.Environment.NewLine,
-                        allBbs
+                        human
                         .Select(bb =>
                         {
-
                             //File.WriteAllText(trainImagePath + "/" + imageNum + "_getCoordinates.txt",$"{bb.Center} {bb.Min} {bb.Max}");
                             return bb.ToString();
                         }
@@ -178,7 +153,7 @@ public class CameraSweepAt90 : MonoBehaviour
             }
             else
             {
-                ScreenCapture.CaptureScreenshot(trainImagePath + "/colored/" + imageNum + "_CaptureScreenshotFunction_pink" + height + ".jpg", 4);
+                ScreenCapture.CaptureScreenshot(trainPath + "/colored/" + imageNum + "_" + height + "_pink.jpg", 4);
                 //File.WriteAllBytes(trainImagePath + "/colored/" + imageNum + "_" + height + "_pink.jpg", data);
                 //File.WriteAllText(trainImagePath + "/" + imageNum + "_pink_position.txt",
                 //    transform.position.ToString());
@@ -188,13 +163,13 @@ public class CameraSweepAt90 : MonoBehaviour
         {
             if (secondApproachWithFancyMaterial == false)
             {
-                ScreenCapture.CaptureScreenshot(testImagePath + "/images/" + imageNum + "_CaptureScreenshotFunction" + height + ".jpg", 4);
+                ScreenCapture.CaptureScreenshot(testPath + "/images/" + imageNum + "_" + height + ".jpg", 4);
                 //File.WriteAllBytes(testImagePath + "/images/" + imageNum + "_" + height + ".jpg", data);
                 var men = FindAllVisibleHumans("0");
                 var women = FindAllVisibleHumans("1");
                 var allBbs = men.Concat(women);
                 File.WriteAllText(
-                    testImagePath + "/annotations/" + imageNum + "_" + height + ".txt",
+                    testPath + "/annotations/" + imageNum + "_" + height + ".txt",
                     string.Join(
                         System.Environment.NewLine,
                         allBbs.Select(bb => bb.ToString())));
@@ -203,7 +178,7 @@ public class CameraSweepAt90 : MonoBehaviour
             }
             else
             {
-                ScreenCapture.CaptureScreenshot(testImagePath + "/colored/" + imageNum + "CaptureScreenshotFunction_pink" + height + ".jpg", 4);
+                ScreenCapture.CaptureScreenshot(testPath + "/colored/" + imageNum + "_" + height + "_pink.jpg", 4);
                 //File.WriteAllBytes(testImagePath + "/colored/" + imageNum + "_" + height + "_pink.jpg", data);
                 //File.WriteAllText(testImagePath + "/" + imageNum + "_pink_position.txt",
                 //    transform.position.ToString());
@@ -216,10 +191,7 @@ public class CameraSweepAt90 : MonoBehaviour
             UnityEditor.EditorApplication.isPlaying = false;
             Debug.Log("Training data collected!");
         }
-        else
-        {
-            imageNum++;
-        }
+        else imageNum++;
     }
 
     AABB[] FindAllVisibleHumans(string tag)
@@ -237,66 +209,32 @@ public class CameraSweepAt90 : MonoBehaviour
         //create parent folder
         parentPath = "C:\\Users\\eventura\\Documents\\MLdataset";
         CreateDirectoryFromPathName(parentPath);
-        //if (!File.Exists(parentPath))
-        //{
-        //    Directory.CreateDirectory(parentPath);
-        //}
-        //create test and train folders
-        //testImagePath = parentPath + "/test";
-        testImagePath = parentPath + "\\test";
-        DeleteDirectoriesAndFilesInDirectories(testImagePath);
-        CreateDirectoryFromPathName(testImagePath);
-        //if (!File.Exists(testImagePath))
-        //{
-        //    Directory.CreateDirectory(testImagePath);
-        //}
-        //testImageWithMaterialColor = parentPath + "/test/colored";
+
+        testPath = parentPath + "\\test";
+        DeleteDirectoriesAndFilesInDirectories(testPath);
+        CreateDirectoryFromPathName(testPath);
+
         testImageWithMaterialColor = parentPath + "\\test\\colored";
         CreateDirectoryFromPathName(testImageWithMaterialColor);
-        //if (!File.Exists(testImageWithMaterialColor))
-        //{
-        //    Directory.CreateDirectory(testImageWithMaterialColor);
-        //}
-        //testImagePathImages = parentPath + "/test/images";
-        testImagePathImages = parentPath + "\\test\\images";
-        CreateDirectoryFromPathName(testImagePathImages);
-        //if (!File.Exists(testImagePathImages))
-        //{
-        //    Directory.CreateDirectory(testImagePathImages);
-        //}
-        //testPathAnnotations = parentPath + "/test/annotations";
+
+        testImagePath = parentPath + "\\test\\images";
+        CreateDirectoryFromPathName(testImagePath);
+
         testPathAnnotations = parentPath + "\\test\\annotations";
         CreateDirectoryFromPathName(testPathAnnotations);
-        //if (!File.Exists(testPathAnnotations))
-        //{
-        //    Directory.CreateDirectory(testPathAnnotations);
-        //}
-        //trainImagePath = parentPath + "/train";
-        trainImagePath = parentPath + "\\train";
-        DeleteDirectoriesAndFilesInDirectories(trainImagePath);
-        CreateDirectoryFromPathName(trainImagePath);
 
-        //trainImageWithMaterialColor = parentPath + "/train/colored";
+        trainPath = parentPath + "\\train";
+        DeleteDirectoriesAndFilesInDirectories(trainPath);
+        CreateDirectoryFromPathName(trainPath);
+
         trainImageWithMaterialColor = parentPath + "\\train\\colored";
         CreateDirectoryFromPathName(trainImageWithMaterialColor);
-        //if (!File.Exists(trainImageWithMaterialColor))
-        //{
-        //    Directory.CreateDirectory(trainImageWithMaterialColor);
-        //}
-        //trainImagePathImages = parentPath + "/train/images";
-        trainImagePathImages = parentPath + "\\train\\images";
-        CreateDirectoryFromPathName(trainImagePathImages);
-        //if (!File.Exists(trainImagePathImages))
-        //{
-        //    Directory.CreateDirectory(trainImagePathImages);
-        //}
-        //trainPathAnnotations = parentPath + "/train/annotations";
+
+        trainImagePath = parentPath + "\\train\\images";
+        CreateDirectoryFromPathName(trainImagePath);
+
         trainPathAnnotations = parentPath + "\\train\\annotations";
         CreateDirectoryFromPathName(trainPathAnnotations);
-        //if (!File.Exists(trainPathAnnotations))
-        //{
-        //    Directory.CreateDirectory(trainPathAnnotations);
-        //}
     }
 
     private void CreateDirectoryFromPathName(string path)
