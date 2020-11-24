@@ -9,7 +9,7 @@ public class CameraSweepAt90 : MonoBehaviour
     private int _height;
     public int height { get => _height; set => _height = value; }
 
-    const int TOTAL_IMAGES = 900;
+    const int TOTAL_IMAGES = 300;
     const float TEST_IMAGE_PERCENT = .2f;
 
     int testNum;
@@ -99,7 +99,7 @@ public class CameraSweepAt90 : MonoBehaviour
         }
         else if (height < 100)
         {
-            height += 5;
+            height += 10;
             foreach (GameObject human in humans) Destroy(human);
             Destroy(GameObject.Find("HumanGenerator").GetComponent<GenerateHumansAtRandomPosition>());
             GameObject.Find("HumanGenerator").AddComponent<GenerateHumansAtRandomPosition>();
@@ -136,12 +136,12 @@ public class CameraSweepAt90 : MonoBehaviour
             {
                 ScreenCapture.CaptureScreenshot(trainPath + "/images/" + imageNum + "_" + height + ".jpg", 4);
                 //File.WriteAllBytes(trainImagePath + "/images/" + imageNum + "_" + height + ".jpg", data);
-                var human = FindAllVisibleHumans("human");
+                var humans = FindAllVisibleHumans("bodySkinMesh");
                 File.WriteAllText(
                     trainPath + "/annotations/" + imageNum + "_" + height + ".txt",
                     string.Join(
                         System.Environment.NewLine,
-                        human
+                        humans
                         .Select(bb =>
                         {
                             //File.WriteAllText(trainImagePath + "/" + imageNum + "_getCoordinates.txt",$"{bb.Center} {bb.Min} {bb.Max}");
@@ -165,14 +165,12 @@ public class CameraSweepAt90 : MonoBehaviour
             {
                 ScreenCapture.CaptureScreenshot(testPath + "/images/" + imageNum + "_" + height + ".jpg", 4);
                 //File.WriteAllBytes(testImagePath + "/images/" + imageNum + "_" + height + ".jpg", data);
-                var men = FindAllVisibleHumans("0");
-                var women = FindAllVisibleHumans("1");
-                var allBbs = men.Concat(women);
+                var humans = FindAllVisibleHumans("bodySkinMesh");
                 File.WriteAllText(
                     testPath + "/annotations/" + imageNum + "_" + height + ".txt",
                     string.Join(
                         System.Environment.NewLine,
-                        allBbs.Select(bb => bb.ToString())));
+                        humans.Select(bb => bb.ToString())));
                 //File.WriteAllText(testImagePath + "/" + imageNum + "_position.txt",
                 //    transform.position.ToString());
             }
@@ -211,7 +209,7 @@ public class CameraSweepAt90 : MonoBehaviour
         CreateDirectoryFromPathName(parentPath);
 
         testPath = parentPath + "\\test";
-        DeleteDirectoriesAndFilesInDirectories(testPath);
+        //DeleteDirectoriesAndFilesInDirectories(testPath);
         CreateDirectoryFromPathName(testPath);
 
         testImageWithMaterialColor = parentPath + "\\test\\colored";
@@ -224,7 +222,7 @@ public class CameraSweepAt90 : MonoBehaviour
         CreateDirectoryFromPathName(testPathAnnotations);
 
         trainPath = parentPath + "\\train";
-        DeleteDirectoriesAndFilesInDirectories(trainPath);
+        //DeleteDirectoriesAndFilesInDirectories(trainPath);
         CreateDirectoryFromPathName(trainPath);
 
         trainImageWithMaterialColor = parentPath + "\\train\\colored";
