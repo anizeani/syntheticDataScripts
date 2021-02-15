@@ -2,18 +2,26 @@ import csv
 import os
 import cv2
 
+# from sys import argv
+from tkinter.filedialog import askdirectory
+path = askdirectory()
+
 class csvEditor:
-    def __init__(self,csv_file_path,ideal_csv_format):
+    def __init__(self,csv_file_path):
         self.csv_file_path = csv_file_path
-        self.idealFormat = ideal_csv_format
+        self.idealFormat = False
         self.removalList = list()
         self.csvAsList = list()
         with open (csv_file_path + '//all_annotations_thermal.csv', 'r') as csv_file:
             csv_reader = csv.reader(csv_file)
             for row in csv_reader:
                 if row[0] == "timestamp_ns": continue
-                if ideal_csv_format == True:
+                fileEnding = row[0].split(".")
+                if len(fileEnding) == 2 & len(row) == 6:
+                    self.idealFormat == True
                     image = row[0]
+                # if ideal_csv_format == True:
+                #     image = row[0]
                 else: image = row[0] + ".png" 
                 image_file = cv2.imread(self.csv_file_path + "/" + image)
                 if(image_file is None):
@@ -51,11 +59,16 @@ class csvEditor:
                     write.truncate(0)
                     writer = csv.writer(write)
                     writer.writerows(lines) 
+        self.idealFormat = True
 
+# path = r"C:\Users\Eran\Desktop\final_split_Train_Test_Humans\testLaying\train"
 
-path = r"C:\Users\Eran\Desktop\final_split_Train_Test_Humans\testLaying\train"
+# if "path" in argv:
+#     path = argv[-1]
+# else: exit(1)
+
 # path = os.getcwd()
-is_csv_ideal_Format = True
-foo = csvEditor(path,is_csv_ideal_Format)
+# is_csv_ideal_Format = True
+foo = csvEditor(path)
 foo.removeRowFromCSV()
-if is_csv_ideal_Format is not True: foo.createCleanCSV()
+if foo.idealFormat is not True: foo.createCleanCSV()
